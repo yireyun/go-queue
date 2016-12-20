@@ -1,5 +1,5 @@
-// esQueue
-package esQueue
+﻿// esQueue
+package queue
 
 import (
 	"runtime"

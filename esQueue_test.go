@@ -1,5 +1,5 @@
-// esQueue_test
-package esQueue
+﻿// esQueue_test
+package queue
 
 import (
 	"fmt"
