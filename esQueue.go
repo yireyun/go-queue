@@ -35,8 +35,8 @@ func (q *EsQueue) Capaciity() uint32 {
 func (q *EsQueue) Quantity() uint32 {
 	var putPos, getPos uint32
 	var quantity uint32
-	getPos = q.getPos
-	putPos = q.putPos
+	getPos = atomic.LoadUint32(&q.getPos)
+	putPos = atomic.LoadUint32(&q.putPos)
 
 	if putPos >= getPos {
 		quantity = putPos - getPos
@@ -53,8 +53,8 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 	var cache *esCache
 	capMod := q.capMod
 	for {
-		getPos = q.getPos
-		putPos = q.putPos
+		getPos = atomic.LoadUint32(&q.getPos)
+		putPos = atomic.LoadUint32(&q.putPos)
 
 		if putPos >= getPos {
 			posCnt = putPos - getPos
@@ -94,8 +94,8 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	var cache *esCache
 	capMod := q.capMod
 	for {
-		putPos = q.putPos
-		getPos = q.getPos
+		putPos = atomic.LoadUint32(&q.putPos)
+		getPos = atomic.LoadUint32(&q.getPos)
 
 		if putPos >= getPos {
 			posCnt = putPos - getPos
