@@ -69,14 +69,14 @@ func TestQueueHigh() {
 		end := time.Now()
 		use := end.Sub(start)
 		op := use / time.Duration(sum)
-		fmt.Printf("%v, Grp: %3d, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
-			runtime.Version(), i, sum, miss, use, op)
+		fmt.Printf("%v %v, Grp: %3d, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
+			runtime.Version(), runtime.GOARCH, i, sum, miss, use, op)
 		Use += use
 		Sum += sum
 	}
 	op := Use / time.Duration(Sum)
-	fmt.Printf("%v, Grp: %3v, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
-		runtime.Version(), "Sum", Sum, 0, Use, op)
+	fmt.Printf("%v %v, Grp: %3v, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
+		runtime.Version(), runtime.GOARCH, "Sum", Sum, 0, Use, op)
 }
 
 func main() {
