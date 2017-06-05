@@ -98,6 +98,7 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	for {
 		if cache.mark {
 			val = cache.value
+			cache.value = nil
 			cache.mark = false
 			return val, true, posCnt - 1
 		} else {
