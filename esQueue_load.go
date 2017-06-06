@@ -18,7 +18,7 @@ func (q *EsQueue) Quantity() uint32 {
 	if putPos >= getPos {
 		quantity = putPos - getPos
 	} else {
-		quantity = q.capMod + putPos - getPos
+		quantity = q.capMod - getPos + putPos
 	}
 
 	return quantity
@@ -36,7 +36,7 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 		if putPos >= getPos {
 			posCnt = putPos - getPos
 		} else {
-			posCnt = capMod + putPos - getPos
+			posCnt = capMod - getPos + putPos
 		}
 
 		if posCnt >= capMod {
@@ -77,7 +77,7 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 		if putPos >= getPos {
 			posCnt = putPos - getPos
 		} else {
-			posCnt = capMod + putPos - getPos
+			posCnt = capMod - getPos + putPos
 		}
 
 		if posCnt < 1 {
