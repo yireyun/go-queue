@@ -1,4 +1,4 @@
-﻿// esQueue_test
+// esQueue_test
 package queue
 
 import (
@@ -14,7 +14,6 @@ func TestQueue(t *testing.T) {
 	q := NewQueue(8)
 	ok, quantity := q.Put(&value)
 	if !ok {
-		t.
 		t.Error("TestStack Get.Fail")
 		return
 	} else {
