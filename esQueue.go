@@ -7,8 +7,9 @@ import (
 )
 
 type esCache struct {
+	putNo uint32
+	getNo uint32
 	value interface{}
-	mark  bool
 }
 
 // lock free queue
@@ -62,7 +63,7 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 			posCnt = capMod - getPos + putPos
 		}
 
-		if posCnt >= capMod {
+		if posCnt >= capMod-1 {
 			runtime.Gosched()
 			return false, posCnt
 		}
@@ -78,9 +79,11 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 	cache = &q.cache[putPosNew&capMod]
 
 	for {
-		if !cache.mark {
+		getNo := atomic.LoadUint32(&cache.getNo)
+		putNo := atomic.LoadUint32(&cache.putNo)
+		if getNo == putNo {
 			cache.value = val
-			cache.mark = true
+			atomic.AddUint32(&cache.putNo, 1)
 			return true, posCnt + 1
 		} else {
 			runtime.Gosched()
@@ -119,10 +122,11 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	cache = &q.cache[getPosNew&capMod]
 
 	for {
-		if cache.mark {
+		getNo := atomic.LoadUint32(&cache.getNo)
+		putNo := atomic.LoadUint32(&cache.putNo)
+		if getNo == putNo-1 {
 			val = cache.value
-			cache.value = nil
-			cache.mark = false
+			atomic.AddUint32(&cache.getNo, 1)
 			return val, true, posCnt - 1
 		} else {
 			runtime.Gosched()

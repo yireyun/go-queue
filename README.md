@@ -2,7 +2,7 @@
 前一久看到一篇文章美团高性能队列——Disruptor，时候自己琢磨了一下；经过反复修改，实现了一个相似的无锁队列EsQueue，该无锁队列相对Disruptor，而言少了队列数量属性quantity的CAP操作，因此性能杠杠的，在测试环境：windows10，Core(TM) i5-3320M CPU 2.6G, 8G 内存，go1.7.4，下性能达到1360-1500万之间。现在把代码发布出来，请同行验证一下，代码如下：
 
 ```
-注：请注意本方法在测试 go test -race 出现警告，可能存在BUG，请勿应用到生产环境
+注：请注意本方法已经通过 go test -race, 无警告。
 go1.7.4, Grp:   1, Times:   10000000, miss:     0, use:   552.8887ms,     55ns/op 
 go1.7.4, Grp:   2, Times:   20000000, miss:     0, use:   1.4554794s,     72ns/op 
 go1.7.4, Grp:   3, Times:   30000000, miss:     0, use:   2.2382081s,     74ns/op 

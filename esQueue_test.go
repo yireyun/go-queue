@@ -65,9 +65,9 @@ func TestQueueGeneral(t *testing.T) {
 	var miss, Sum int
 	var Use time.Duration
 	for i := 1; i <= runtime.NumCPU()*4; i++ {
-		cnt := 10000 * 10
+		cnt := 10000 * 100
 		if i > 9 {
-			cnt = 10000 * 1
+			cnt = 10000 * 10
 		}
 		sum := i * cnt
 		start := time.Now()
@@ -149,8 +149,12 @@ func testQueuePutGet(t *testing.T, grp, cnt int) (
 		go func(g int) {
 			defer wg.Done()
 			for j := 0; j < cnt; j++ {
-				t := fmt.Sprintf("Node.%d.%d.%d", g, j, atomic.AddInt32(&id, 1))
-				q.Put(t)
+				val := fmt.Sprintf("Node.%d.%d.%d", g, j, atomic.AddInt32(&id, 1))
+				ok, _ := q.Put(&val)
+				for !ok {
+					time.Sleep(time.Microsecond)
+					ok, _ = q.Put(&val)
+				}
 			}
 		}(i)
 	}
@@ -186,7 +190,7 @@ func testQueueGeneral(t *testing.T, grp, cnt int) int {
 
 	var wg sync.WaitGroup
 	var idPut, idGet int32
-	var miss = 0
+	var miss int32
 
 	wg.Add(grp)
 	q := NewQueue(1024 * 1024)
@@ -194,8 +198,12 @@ func testQueueGeneral(t *testing.T, grp, cnt int) int {
 		go func(g int) {
 			defer wg.Done()
 			for j := 0; j < cnt; j++ {
-				t := fmt.Sprintf("Node.%d.%d.%d", g, j, atomic.AddInt32(&idPut, 1))
-				q.Put(t)
+				val := fmt.Sprintf("Node.%d.%d.%d", g, j, atomic.AddInt32(&idPut, 1))
+				ok, _ := q.Put(&val)
+				for !ok {
+					time.Sleep(time.Microsecond)
+					ok, _ = q.Put(&val)
+				}
 			}
 		}(i)
 	}
@@ -208,7 +216,7 @@ func testQueueGeneral(t *testing.T, grp, cnt int) int {
 			for j := 0; j < cnt; j++ {
 				_, ok, _ = q.Get() //该语句注释掉将导致运行结果不正确
 				for !ok {
-					miss++
+					atomic.AddInt32(&miss, 1)
 					time.Sleep(time.Microsecond * 50)
 					_, ok, _ = q.Get()
 				}
@@ -220,7 +228,7 @@ func testQueueGeneral(t *testing.T, grp, cnt int) int {
 	if q := q.Quantity(); q != 0 {
 		t.Errorf("Grp:%v, Quantity Error: [%v] <>[%v]", grp, q, 0)
 	}
-	return miss
+	return int(miss)
 }
 
 type QtObj struct {
@@ -282,7 +290,7 @@ func testQueuePutGoGet(t *testing.T, grp, cnt int) int {
 				//var miss int32
 				for !ok {
 					//Qt.Go[g].getMiss++
-					//miss++
+					//atomic.AddInt32(&miss, 1)
 					//time.Sleep(time.Microsecond)
 					ok, _ = q.Put(&value)
 					//if miss > 10000 {
@@ -306,7 +314,7 @@ func testQueuePutGoGet(t *testing.T, grp, cnt int) int {
 				_, ok, _ = q.Get() //该语句注释掉将导致运行结果不正确
 				for !ok {
 					//Qt.Go[g].putMiss++
-					//miss++
+					//atomic.AddInt32(&miss, 1)
 					//time.Sleep(time.Microsecond * 100)
 					_, ok, _ = q.Get()
 					//if miss > 10000 {
@@ -388,7 +396,11 @@ func testQueuePutGetOrder(t *testing.T, grp, cnt int) (
 			defer wg.Done()
 			for j := 0; j < cnt; j++ {
 				v := atomic.AddInt32(&idPut, 1)
-				q.Put(v)
+				ok, _ := q.Put(v)
+				for !ok {
+					time.Sleep(time.Microsecond)
+					ok, _ = q.Put(v)
+				}
 			}
 		}(i)
 	}
