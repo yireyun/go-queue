@@ -53,27 +53,25 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 	var putPos, putPosNew, getPos, posCnt uint32
 	var cache *esCache
 	capMod := q.capMod
-	for {
-		getPos = atomic.LoadUint32(&q.getPos)
-		putPos = atomic.LoadUint32(&q.putPos)
 
-		if putPos >= getPos {
-			posCnt = putPos - getPos
-		} else {
-			posCnt = capMod - getPos + putPos
-		}
+	getPos = atomic.LoadUint32(&q.getPos)
+	putPos = atomic.LoadUint32(&q.putPos)
 
-		if posCnt >= capMod-1 {
-			runtime.Gosched()
-			return false, posCnt
-		}
+	if putPos >= getPos {
+		posCnt = putPos - getPos
+	} else {
+		posCnt = capMod - getPos + putPos
+	}
 
-		putPosNew = putPos + 1
-		if atomic.CompareAndSwapUint32(&q.putPos, putPos, putPosNew) {
-			break
-		} else {
-			runtime.Gosched()
-		}
+	if posCnt >= capMod-1 {
+		runtime.Gosched()
+		return false, posCnt
+	}
+
+	putPosNew = putPos + 1
+	if !atomic.CompareAndSwapUint32(&q.putPos, putPos, putPosNew) {
+		runtime.Gosched()
+		return false, posCnt
 	}
 
 	cache = &q.cache[putPosNew&capMod]
@@ -96,27 +94,25 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	var putPos, getPos, getPosNew, posCnt uint32
 	var cache *esCache
 	capMod := q.capMod
-	for {
-		putPos = atomic.LoadUint32(&q.putPos)
-		getPos = atomic.LoadUint32(&q.getPos)
 
-		if putPos >= getPos {
-			posCnt = putPos - getPos
-		} else {
-			posCnt = capMod - getPos + putPos
-		}
+	putPos = atomic.LoadUint32(&q.putPos)
+	getPos = atomic.LoadUint32(&q.getPos)
 
-		if posCnt < 1 {
-			runtime.Gosched()
-			return nil, false, posCnt
-		}
+	if putPos >= getPos {
+		posCnt = putPos - getPos
+	} else {
+		posCnt = capMod - getPos + putPos
+	}
 
-		getPosNew = getPos + 1
-		if atomic.CompareAndSwapUint32(&q.getPos, getPos, getPosNew) {
-			break
-		} else {
-			runtime.Gosched()
-		}
+	if posCnt < 1 {
+		runtime.Gosched()
+		return nil, false, posCnt
+	}
+
+	getPosNew = getPos + 1
+	if !atomic.CompareAndSwapUint32(&q.getPos, getPos, getPosNew) {
+		runtime.Gosched()
+		return nil, false, posCnt
 	}
 
 	cache = &q.cache[getPosNew&capMod]
