@@ -2,6 +2,7 @@
 package queue
 
 import (
+	"fmt"
 	"runtime"
 	"sync/atomic"
 )
@@ -25,8 +26,25 @@ func NewQueue(capaciity uint32) *EsQueue {
 	q := new(EsQueue)
 	q.capaciity = minQuantity(capaciity)
 	q.capMod = q.capaciity - 1
+	q.putPos = 0
+	q.getPos = 0
 	q.cache = make([]esCache, q.capaciity)
+	for i := range q.cache {
+		cache := &q.cache[i]
+		cache.getNo = uint32(i)
+		cache.putNo = uint32(i)
+	}
+	cache := &q.cache[0]
+	cache.getNo = q.capaciity
+	cache.putNo = q.capaciity
 	return q
+}
+
+func (q *EsQueue) String() string {
+	getPos := atomic.LoadUint32(&q.getPos)
+	putPos := atomic.LoadUint32(&q.putPos)
+	return fmt.Sprintf("Queue{capaciity: %v, capMod: %v, putPos: %v, getPos: %v}",
+		q.capaciity, q.capMod, putPos, getPos)
 }
 
 func (q *EsQueue) Capaciity() uint32 {
@@ -42,7 +60,7 @@ func (q *EsQueue) Quantity() uint32 {
 	if putPos >= getPos {
 		quantity = putPos - getPos
 	} else {
-		quantity = q.capMod - getPos + putPos
+		quantity = q.capMod + (putPos - getPos)
 	}
 
 	return quantity
@@ -60,7 +78,7 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 	if putPos >= getPos {
 		posCnt = putPos - getPos
 	} else {
-		posCnt = capMod - getPos + putPos
+		posCnt = capMod + (putPos - getPos)
 	}
 
 	if posCnt >= capMod-1 {
@@ -79,9 +97,9 @@ func (q *EsQueue) Put(val interface{}) (ok bool, quantity uint32) {
 	for {
 		getNo := atomic.LoadUint32(&cache.getNo)
 		putNo := atomic.LoadUint32(&cache.putNo)
-		if getNo == putNo {
+		if putPosNew == putNo && getNo == putNo {
 			cache.value = val
-			atomic.AddUint32(&cache.putNo, 1)
+			atomic.AddUint32(&cache.putNo, q.capaciity)
 			return true, posCnt + 1
 		} else {
 			runtime.Gosched()
@@ -101,7 +119,7 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	if putPos >= getPos {
 		posCnt = putPos - getPos
 	} else {
-		posCnt = capMod - getPos + putPos
+		posCnt = capMod + (putPos - getPos)
 	}
 
 	if posCnt < 1 {
@@ -120,9 +138,9 @@ func (q *EsQueue) Get() (val interface{}, ok bool, quantity uint32) {
 	for {
 		getNo := atomic.LoadUint32(&cache.getNo)
 		putNo := atomic.LoadUint32(&cache.putNo)
-		if getNo == putNo-1 {
+		if getPosNew == getNo && getNo == putNo-q.capaciity {
 			val = cache.value
-			atomic.AddUint32(&cache.getNo, 1)
+			atomic.AddUint32(&cache.getNo, q.capaciity)
 			return val, true, posCnt - 1
 		} else {
 			runtime.Gosched()
