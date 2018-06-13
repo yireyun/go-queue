@@ -71,7 +71,7 @@ func testQueueHigh(grp, cnt int) int {
 				var miss int32
 				for !ok {
 					Qt.Go[g].putMiss++
-					miss++
+					atomic.AddInt32(&miss, 1)
 					time.Sleep(time.Microsecond)
 					ok, _ = q.Put(&value)
 					if miss > 10000 {
@@ -96,7 +96,7 @@ func testQueueHigh(grp, cnt int) int {
 				_, ok, _ = q.Get() //该语句注释掉将导致运行结果不正确
 				for !ok {
 					Qt.Go[g].getMiss++
-					miss++
+					atomic.AddInt32(&miss, 1)
 					time.Sleep(time.Microsecond * 100)
 					_, ok, _ = q.Get()
 					if miss > 10000 {
@@ -140,8 +140,8 @@ func TestQueueHigh() {
 		Sum += sum
 	}
 	op := Use / time.Duration(Sum)
-	fmt.Printf("%v, Grp: %3v, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
-		runtime.Version(), "Sum", Sum, 0, Use, op)
+	fmt.Printf("%v %v, Grp: %3v, Times: %10d, miss:%6v, use: %12v, %8v/op\n",
+		runtime.Version(), runtime.GOARCH, "Sum", Sum, 0, Use, op)
 }
 
 func main() {

@@ -290,7 +290,7 @@ func testQueuePutGoGet(t *testing.T, grp, cnt int) int {
 				//var miss int32
 				for !ok {
 					//Qt.Go[g].getMiss++
-					//miss++
+					//atomic.AddInt32(&miss, 1)
 					//time.Sleep(time.Microsecond)
 					ok, _ = q.Put(&value)
 					//if miss > 10000 {
@@ -314,7 +314,7 @@ func testQueuePutGoGet(t *testing.T, grp, cnt int) int {
 				_, ok, _ = q.Get() //该语句注释掉将导致运行结果不正确
 				for !ok {
 					//Qt.Go[g].putMiss++
-					//miss++
+					//atomic.AddInt32(&miss, 1)
 					//time.Sleep(time.Microsecond * 100)
 					_, ok, _ = q.Get()
 					//if miss > 10000 {
