@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	sq "github.com/yireyun/go-queue"
